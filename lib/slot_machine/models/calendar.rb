@@ -2,7 +2,6 @@ require "json"
 require "Time"
 require "slot_machine/services/calendar_stub"
 require "slot_machine/models/calendar_slot"
-require "slot_machine/common/utils"
 
 module SlotMachine
 	class Calendar
@@ -21,30 +20,44 @@ module SlotMachine
 		# I assume that we want the available slots for a time window
 		# I could have decided that we wanted slots for a specific workday
 		# But that's not the Way we tread (and that makes it a bit tougher)
-		def get_available_slots(start_date, end_date, min_duration)
+		def get_available_slots(start_time, end_time, min_duration)
+      return [] if @first_slot == nil
 			empty_slots = []
-			current_slot = CalendarSlot.new(start_date, start_date)
+			current_slot = CalendarSlot.new(start_time, start_time)
 			starting_slot = @first_slot
 
 			# we have to start with a slot that happens AFTER the beginning date
 			# i lowkey hate this, I would love to find a better way but none cross my mind right now
-			while starting_slot.start_date < start_date
+			while starting_slot.start_time < Time.parse(start_time)
 				starting_slot = starting_slot.next_slot
 			end
 
 			current_slot.next_slot = starting_slot
-			while current_slot.next_slot != nil && current_slot.end_date < end_date
-				empty_slots.concat(current_slot.get_available_slots_between(min_duration))
+			while current_slot.next_slot != nil && current_slot.end_time < Time.parse(end_time)
+        available = current_slot.get_available_slots_between(min_duration)
+				empty_slots = empty_slots.concat(available)
 				current_slot = current_slot.next_slot
 			end
 			return empty_slots
 		end
 
+    #for testing purpose
+    def get_calendar_size
+      return 0 if @first_slot == nil
+      current_slot = @first_slot
+      i = 1
+      while current_slot.next_slot != nil
+        i = i + 1
+        current_slot = current_slot.next_slot
+      end
+      return i
+    end
+
 		private
 
 		# We could add caching here if necessary
 		def fetch_calendar
-			get_calendar_service = SlotMachine::Calendar::GetCalendar.new()
+			get_calendar_service = SlotMachine::CalendarService::GetCalendar.new()
 			current_slot = nil
 
 			# and here comes unecessary complications for me but that's the Way it is.
@@ -52,13 +65,15 @@ module SlotMachine
 
 			# We are assuming that the api returns the date in order, if not this method will be
 			# a bit more complex
-			calendar_json.each |slot| do
+      # Update : So that's what I get for juste glazing over the actual json file
+      # I think i got exactly what I deserved
+			calendar_json.each do |slot|
 				# not great
 				if @first_slot == nil
-					@first_slot = SlotMachine::CalendarSlot.new(slot["start_date"], slot["end_date"])
+					@first_slot = SlotMachine::CalendarSlot.new(slot["start"], slot["end"])
 					current_slot = @first_slot
 				else
-					current_slot.next_slot = SlotMachine::CalendarSlot.new(slot["start_date"], slot["end_date"])
+					current_slot.next_slot = SlotMachine::CalendarSlot.new(slot["start"], slot["end"])
 					current_slot = current_slot.next_slot
 				end
 			end

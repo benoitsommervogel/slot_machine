@@ -9,8 +9,8 @@ module SlotMachine
 			@calendar = SlotMachine::Calendar.new(name)
 		end
 
-		def get_avalaible_slots(start_date, end_date, duration)
-			return @calendar.get_available_slots(start_date, end_date, duration)
+		def get_avalaible_slots(start_time, end_time, duration)
+			return @calendar.get_available_slots(start_time, end_time, duration)
 		end
 	end
 end

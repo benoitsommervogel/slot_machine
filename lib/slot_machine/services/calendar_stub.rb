@@ -1,8 +1,7 @@
-require "date"
 require "json"
 
 module SlotMachine
-	module Calendar
+	module CalendarService
 		class GetCalendar
 
 			def initialize
@@ -11,7 +10,7 @@ module SlotMachine
 
 			def fetch(user)
 				begin
-					file = File.open("/data/input_#{user}.json")
+					file = File.open(File.join(File.dirname(__FILE__), "../../data/input_#{user}.json"))
 				rescue => e
 					print "error while opening file for user #{user} : #{e.message}"
 					return nil

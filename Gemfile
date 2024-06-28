@@ -2,8 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in slot_machine.gemspec
-gemspec
+ruby "3.2.2"
 
 gem "rake", "~> 13.0"
 
