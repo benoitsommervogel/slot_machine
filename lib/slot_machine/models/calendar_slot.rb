@@ -1,5 +1,4 @@
 # Was another file REALLY necessary ? I prefer it that way in any case
-require "time"
 require "slot_machine/models/common/utils"
 
 # So this class is pretty empty as is, but in most situations, slots will contain
@@ -8,6 +7,7 @@ require "slot_machine/models/common/utils"
 
 module SlotMachine
 	class CalendarSlot
+
     include SlotMachine::Utils
     attr_accessor :start_time, :end_time, :next_slot
 
@@ -29,26 +29,30 @@ module SlotMachine
 
     def get_available_slots_between(min_duration)
       if next_slot != nil && @next_slot.start_time.wday == @end_time.wday
-        return available_slots_between(self, @next_slot, min_duration)
+        return available_slots_between(self.end_time, @next_slot.start_time, min_duration)
       elsif next_slot != nil
         # here we find the available slots between two slots not on the same day
         # I hate it
-        end_of_day = end_workday(@end_time)
-        start_tomorrow = start_workday(@next_slot.start_time)
-        return available_slots_between(self, CalendarSlot.new(end_of_day, end_of_day), min_duration) + available_slots_between(CalendarSlot.new(start_tomorrow, start_tomorrow), @next_slot, min_duration)
+        end_of_day = Time.parse(end_workday(@end_time))
+        start_tomorrow = Time.parse(start_workday(@next_slot.start_time))
+        return available_slots_between(self.end_time, end_of_day, min_duration) + available_slots_between(start_tomorrow, @next_slot.start_time, min_duration)
       end
       return []
     end
 
+    def get_available_slots_before(min_duration, end_time)
+      return available_slots_between(self.end_time, end_time, min_duration)
+    end
+
     private
 
-    def available_slots_between(first_slot, second_slot, min_duration)
+    def available_slots_between(first_slot_end, second_slot_start, min_duration)
       available_slots = []
-      free_window = ((second_slot.start_time - first_slot.end_time) / 3600) - min_duration
+      free_window = ((second_slot_start - first_slot_end) / 3600) - min_duration
       # we can start a slot at any hour, so for each hour above our limit
       # it's an extra slot
       for i in 0..free_window
-        available_slots.push(DateTime.new(first_slot.end_time.year, first_slot.end_time.month, first_slot.end_time.day, first_slot.end_time.hour + i, 0, 0, first_slot.end_time.zone).to_s)
+        available_slots.push(DateTime.new(first_slot_end.year, first_slot_end.month, first_slot_end.day, first_slot_end.hour + i, 0, 0, first_slot_end.zone).to_s)
       end
       return available_slots
     end
